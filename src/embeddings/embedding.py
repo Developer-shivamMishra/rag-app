@@ -1,7 +1,20 @@
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-from src.config.settings import Settings
 
 
 def get_embeddings():
-    return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+    
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/text-embedding-004",
+        api_key=os.getenv("GEMINI_API_KEY")
+    )
+    
+    return embeddings
+
+
+
+
+
+
+
+
