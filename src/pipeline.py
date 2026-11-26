@@ -1,17 +1,25 @@
-from src.config.settings import DATA_DIR
-from src.ingestion.chunker import chunk_documents
 from src.ingestion.loader import load_pdf
-from src.retrieval.retriever import get_retriever
-from src.vectorstore.store import build_vectorstore, load_vectorstore
+from src.ingestion.chunker import chunk_documents
+from src.embeddings.embedding import get_embedding_model
+from src.retrieval.retriever import create_retriever
+from src.generation.llm import get_llm, generate_answer
 
 
-def ingest(sample_name: str = "sample.pdf"):
-    docs = load_pdf(DATA_DIR / sample_name)
-    chunks = chunk_documents(docs)
-    return build_vectorstore(chunks)
+class RAGPipeline:
+    def __init__(self):
+        self.embeddings = get_embedding_model()
+        self.llm = get_llm()
+        self.retriever = None
+        self.pdf_path = None
 
+    def setup(self, pdf_path: str):
+        self.pdf_path = pdf_path
+        docs = load_pdf(pdf_path)
+        chunks = chunk_documents(docs)
+        self.retriever = create_retriever(chunks, self.embeddings)
 
-def query(question: str, k: int = 4):
-    store = load_vectorstore()
-    retriever = get_retriever(store, k=k)
-    return retriever.invoke(question)
+    def ask(self, question: str) -> str:
+        if not self.retriever or not self.pdf_path:
+            raise ValueError("Run setup() before asking questions.")
+        docs = self.retriever.invoke(question)
+        return generate_answer(self.llm, docs, question, self.pdf_path)

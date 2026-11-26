@@ -1,7 +1,12 @@
-from pathlib import Path
+from pypdf import PdfReader
+from langchain_core.documents import Document
 
-from langchain_community.document_loaders import PyPDFLoader
-
-
-def load_pdf(path: Path):
-    return PyPDFLoader(str(path)).load()
+def load_pdf(file_path: str) -> list[Document]:
+    reader = PdfReader(file_path)
+    return [
+        Document(
+            page_content=page.extract_text() or "",
+            metadata={"source": file_path, "page": i},
+        )
+        for i, page in enumerate(reader.pages)
+    ]
